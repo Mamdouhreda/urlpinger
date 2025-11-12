@@ -1,22 +1,25 @@
 package main
 
 import (
-    "fmt"
-    "urlpinger/data"
-    "urlpinger/load"
+	"fmt"
+
+	"urlpinger/data"
+	loadevent "urlpinger/load"
 )
 
-
 func main() {
- 
-	NavTiming, err := loadevent.LoadEventMS(data.First.URL)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("LoadEvent:", NavTiming.LoadEvent, "seconds")
-	fmt.Println("TTFB:", NavTiming.TTFB, "milliseconds")
-	fmt.Println("DNS:", NavTiming.DNS, "milliseconds")
-	fmt.Println("TLS:", NavTiming.TLS, "milliseconds")
+    for _, site := range data.Sites {
+        navTiming, err := loadevent.LoadEventMS(site.URL)
+        if err != nil {
+            fmt.Printf("Error fetching metrics for %s: %v\n", site.URL, err)
+            continue
+        }
 
+        fmt.Println("URL:", site.URL)
+        fmt.Println("LoadEvent:", navTiming.LoadEvent, "seconds")
+        fmt.Println("TTFB:", navTiming.TTFB, "milliseconds")
+        fmt.Println("DNS:", navTiming.DNS, "milliseconds")
+        fmt.Println("TLS:", navTiming.TLS, "milliseconds")
+        fmt.Println()
+    }
 }

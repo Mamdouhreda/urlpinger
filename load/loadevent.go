@@ -24,7 +24,8 @@ func LoadEventMS(url string)(NavTiming, error){
 	ctx, cancelBrowser := chromedp.NewContext(ctx)
 	defer cancelBrowser()
 
-	  // all vairable to get back
+
+	  // all variable to get back
 	var (
 		DNS              float64
 		TLS              float64
@@ -46,7 +47,7 @@ func LoadEventMS(url string)(NavTiming, error){
 	if err != nil {
 		return NavTiming{}, err
 	}
-	//convert from millsecond to seconds
+	//convert from millisecond to seconds
 	loadEventEnd = loadEventEnd / 1000
 	
 	return NavTiming{

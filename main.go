@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	//"sync"
 	"time"
 	"urlpinger/data"
 	loadevent "urlpinger/load"
@@ -10,17 +10,17 @@ import (
 
 func main() {
     start := time.Now()
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 
     for _, site := range data.Sites {
-        wg.Add(1)
+       // wg.Add(1)
 
         // capture values
         url := site.URL
         id := site.ID
 
-        go func(url string, id int) {
-            defer wg.Done()
+        func(url string, id int) {
+            //defer wg.Done()
 
             navTiming, err := loadevent.LoadEventMS(url)
             if err != nil {
@@ -37,7 +37,7 @@ func main() {
             fmt.Println()
         }(url, id)
     }
-    wg.Wait()
+   // wg.Wait()
     end := time.Now()
     fmt.Println("==== FINISHED ====")
     fmt.Printf("Time: %.2f seconds\n", end.Sub(start).Seconds())

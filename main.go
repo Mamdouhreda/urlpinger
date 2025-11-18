@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 	"urlpinger/data"
-	loadevent "urlpinger/load"
+    "urlpinger/load"    
 )
 
 const MaxWorkers = 5 // Maximum number of concurrent workers
@@ -18,7 +18,7 @@ func main() {
        sem <- struct{}{} // sending the token 
         url := site.URL
         id := site.ID
-
+        // start the goroutine and send the url and id to the function
         go func(url string, id int) {
             defer wg.Done()
             defer func() { <-sem }() // Release the token 
@@ -29,6 +29,7 @@ func main() {
             }
 
             fmt.Println("URL:", url)
+            fmt.Printf("Slow Images: %v\n", navTiming.SlowImages)
             fmt.Println("LoadEvent:", navTiming.LoadEvent, "seconds")
             fmt.Println("TTFB:", navTiming.TTFB, "milliseconds")
             fmt.Println("DNS:", navTiming.DNS, "milliseconds")

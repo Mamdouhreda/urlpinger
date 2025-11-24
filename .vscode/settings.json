@@ -1,3 +1,9 @@
 {
-  "cSpell.words": ["chromedp", "loadevent", "TTFB", "urlpinger"]
+  "cSpell.words": [
+    "chromedp",
+    "loadevent",
+    "rendertemplate",
+    "TTFB",
+    "urlpinger"
+  ]
 }

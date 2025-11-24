@@ -7,7 +7,7 @@ type URLCheck struct {
 
 // Sample URLs for testing
 var Sites = []URLCheck{
-	{ID: 1, URL: "https://www.google.com/"},
+	{ID: 1, URL: "https://protectdemocracy.org/"},
 	{ID: 2, URL: "https://mamdouh.co.uk/"},
 	{ID: 3, URL: "https://www.wikipedia.org/"},
 	{ID: 4, URL: "https://www.github.com/"},

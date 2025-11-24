@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Pinger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-white">
+    <main class="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-12">
+      <header class="space-y-3 text-center">
+        <p class="text-sm uppercase tracking-[0.4em] text-slate-400">
+          URL Pinger
+        </p>
+        <h1 class="text-3xl font-semibold tracking-tight text-white">
+          Check site response time in seconds
+        </h1>
+        <div
+          class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-300"
+        >
+          <span class="size-2 rounded-full bg-emerald-400"></span>
+          Realtime monitoring ready
+        </div>
+      </header>
+
+      <nav class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button
+          id="single-tab"
+          class="rounded-2xl border border-slate-800 bg-white/5 px-5 py-4 text-left text-white backdrop-blur transition hover:border-white/40"
+        >
+          <div class="text-sm uppercase tracking-[0.4em] text-slate-400">
+            Page 01
+          </div>
+          <h2 class="text-xl font-semibold">Single URL speed check</h2>
+          <p class="text-sm text-slate-300">
+            Paste a link and ping it instantly.
+          </p>
+        </button>
+        <button
+          id="multi-tab"
+          class="rounded-2xl border border-slate-800 bg-white/5 px-5 py-4 text-left text-slate-300 backdrop-blur transition hover:border-white/40"
+        >
+          <div class="text-sm uppercase tracking-[0.4em] text-slate-600">
+            Page 02
+          </div>
+          <h2 class="text-xl font-semibold text-white">
+            Multi URL batch check
+          </h2>
+          <p class="text-sm text-slate-300">
+            Load-test several domains at once.
+          </p>
+        </button>
+      </nav>
+
+      <section
+        id="single-panel"
+        class="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl shadow-emerald-500/20"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white">Single Site Ping</h3>
+          <span
+            class="rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium text-emerald-300"
+          >
+            Fast check
+          </span>
+        </div>
+        <form class="space-y-3">
+          <label class="text-sm text-slate-300" for="single-url">
+            Enter a URL
+          </label>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="single-url"
+              type="url"
+              placeholder="https://example.com"
+              class="w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              class="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+            >
+              Ping
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section
+        id="multi-panel"
+        class="hidden space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-500/10 via-white/5 to-transparent p-6 shadow-2xl shadow-cyan-500/20"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white">Multi Site Ping</h3>
+          <span
+            class="rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-medium text-cyan-200"
+          >
+            Batch mode
+          </span>
+        </div>
+        <form class="space-y-3">
+          <label class="text-sm text-slate-300" for="multi-url">
+            Add one URL per line (max 10)
+          </label>
+          <textarea
+            id="multi-url"
+            rows="6"
+            placeholder="https://one.com&#10;https://two.com"
+            class="w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 focus:border-cyan-400 focus:outline-none"
+          ></textarea>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              class="rounded-2xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40"
+            >
+              Clear
+            </button>
+            <button
+              type="submit"
+              class="rounded-2xl bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300"
+            >
+              Ping All
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const singleTab = document.getElementById("single-tab");
+      const multiTab = document.getElementById("multi-tab");
+      const singlePanel = document.getElementById("single-panel");
+      const multiPanel = document.getElementById("multi-panel");
+
+      const activate = (isSingle) => {
+        singlePanel.classList.toggle("hidden", !isSingle);
+        multiPanel.classList.toggle("hidden", isSingle);
+
+        singleTab.classList.toggle("text-white", isSingle);
+        singleTab.classList.toggle("text-slate-300", !isSingle);
+        singleTab.classList.toggle("border-white/30", isSingle);
+
+        multiTab.classList.toggle("text-white", !isSingle);
+        multiTab.classList.toggle("text-slate-300", isSingle);
+        multiTab.classList.toggle("border-white/30", !isSingle);
+      };
+
+      singleTab.addEventListener("click", () => activate(true));
+      multiTab.addEventListener("click", () => activate(false));
+    </script>
+  </body>
+</html>

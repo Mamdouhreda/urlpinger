@@ -3,6 +3,7 @@ package loadevent
 import (
 	"context"
 	"time"
+
 	"github.com/chromedp/chromedp"
 )
 
@@ -54,6 +55,7 @@ func LoadEventMS(url string)(NavTiming, error){
 	//convert from millisecond to seconds
 	loadEventEnd = loadEventEnd / 1000
 	
+	
 	return NavTiming{
 		LoadEvent: loadEventEnd,
 		TTFB : TTFB,
@@ -62,3 +64,4 @@ func LoadEventMS(url string)(NavTiming, error){
 		SlowImages: slowImages,
 	}, nil
 }
+

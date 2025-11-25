@@ -20,7 +20,6 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("HTTP server error:", err)
 	}
-    // start := time.Now()
     // var wg sync.WaitGroup
     // sem := make(chan struct{}, MaxWorkers) // create the channel with the limit of the workers
     // for _, site := range data.Sites {
@@ -49,7 +48,4 @@ func main() {
     //     }(url, id)
     // }
     // wg.Wait()
-    // end := time.Now()
-    // fmt.Println("==== FINISHED ====")
-    // fmt.Printf("Time: %.2f seconds\n", end.Sub(start).Seconds())
 }

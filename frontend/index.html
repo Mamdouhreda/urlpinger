@@ -64,13 +64,14 @@
             Fast check
           </span>
         </div>
-        <form class="space-y-3">
+        <form id="single-form" class="space-y-3">
           <label class="text-sm text-slate-300" for="single-url">
             Enter a URL
           </label>
           <div class="flex flex-col gap-3 sm:flex-row">
             <input
               id="single-url"
+              name="single-url"
               type="url"
               placeholder="https://example.com"
               class="w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
@@ -130,6 +131,8 @@
       const multiTab = document.getElementById("multi-tab");
       const singlePanel = document.getElementById("single-panel");
       const multiPanel = document.getElementById("multi-panel");
+      const singleForm = document.getElementById("single-form");
+      const singleUrlInput = document.getElementById("single-url");
 
       const activate = (isSingle) => {
         singlePanel.classList.toggle("hidden", !isSingle);
@@ -146,6 +149,27 @@
 
       singleTab.addEventListener("click", () => activate(true));
       multiTab.addEventListener("click", () => activate(false));
+
+      singleForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const url = singleUrlInput.value.trim();
+        if (!url) return;
+
+        try {
+          const response = await fetch("/submit-single-url", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ "single-url": url }),
+          });
+
+          const text = await response.text();
+          console.log("Server response:", text);
+        } catch (err) {
+          console.error("Ping failed:", err);
+        }
+      });
     </script>
   </body>
 </html>

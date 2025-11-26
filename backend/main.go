@@ -6,14 +6,13 @@ import (
 	"urlpinger/requests"
 )
 
-const MaxWorkers = 5 // Maximum number of concurrent workers
-
 
 
 func main() {
 	// register the http handler for root, index.html, and form submission
 	http.HandleFunc("/", requests.Home)
 	http.HandleFunc("/submit-single-url", requests.SubmitSingleURL)
+    http.HandleFunc("/submit-multi-url", requests.SubmitMultiURL)   
 
 	// start the server
 	fmt.Println("Starting server at :8080")

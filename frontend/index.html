@@ -112,7 +112,7 @@
             Batch mode
           </span>
         </div>
-        <form class="space-y-3">
+        <form id="multi-form" class="space-y-3">
           <label class="text-sm text-slate-300" for="multi-url">
             Add one URL per line (max 10)
           </label>
@@ -124,6 +124,7 @@
           ></textarea>
           <div class="flex flex-col gap-3 sm:flex-row">
             <button
+              id="multi-clear"
               type="button"
               class="rounded-2xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40"
             >
@@ -137,6 +138,30 @@
             </button>
           </div>
         </form>
+
+        <!-- Multi Results Table -->
+        <div id="multi-results-container" class="hidden mt-6">
+          <div class="rounded-2xl border border-white/20 bg-white/5 p-6">
+            <h4 class="text-sm font-semibold text-white mb-4">Batch Results</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs sm:text-sm">
+                <thead>
+                  <tr class="border-b border-white/10 text-slate-400">
+                    <th class="py-2 pr-4 text-left font-medium">URL</th>
+                    <th class="py-2 pr-4 text-left font-medium">Load (s)</th>
+                    <th class="py-2 pr-4 text-left font-medium">TTFB (ms)</th>
+                    <th class="py-2 pr-4 text-left font-medium">DNS (ms)</th>
+                    <th class="py-2 pr-4 text-left font-medium">TLS (ms)</th>
+                    <th class="py-2 pr-4 text-left font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="multi-results-table">
+                  <!-- Batch results will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -147,6 +172,9 @@
       const multiPanel = document.getElementById("multi-panel");
       const singleForm = document.getElementById("single-form");
       const singleUrlInput = document.getElementById("single-url");
+      const multiForm = document.getElementById("multi-form");
+      const multiUrlInput = document.getElementById("multi-url");
+      const multiClearBtn = document.getElementById("multi-clear");
 
       const activate = (isSingle) => {
         singlePanel.classList.toggle("hidden", !isSingle);
@@ -166,6 +194,10 @@
 
       const resultsContainer = document.getElementById("results-container");
       const resultsTable = document.getElementById("results-table");
+      const multiResultsContainer = document.getElementById(
+        "multi-results-container"
+      );
+      const multiResultsTable = document.getElementById("multi-results-table");
 
       singleForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -237,6 +269,153 @@
           resultsTable.innerHTML = `<tr><td class="text-red-400">Error: ${err.message}</td></tr>`;
           console.error("Ping failed:", err);
         }
+      });
+
+      // Helper function to render a single result row
+      const renderResultRow = (item) => {
+        const hasError = !!item.error;
+        return `
+          <tr class="border-b border-white/10" data-url="${item.url}">
+            <td class="py-2 pr-4 text-white break-all">${item.url}</td>
+            <td class="py-2 pr-4 text-slate-200">
+              ${
+                hasError || item.loadEvent == null
+                  ? "-"
+                  : item.loadEvent.toFixed(2)
+              }
+            </td>
+            <td class="py-2 pr-4 text-slate-200">
+              ${hasError || item.ttfb == null ? "-" : item.ttfb.toFixed(2)}
+            </td>
+            <td class="py-2 pr-4 text-slate-200">
+              ${hasError || item.dns == null ? "-" : item.dns.toFixed(2)}
+            </td>
+            <td class="py-2 pr-4 text-slate-200">
+              ${hasError || item.tls == null ? "-" : item.tls.toFixed(2)}
+            </td>
+            <td class="py-2 pr-4 ${
+              hasError ? "text-amber-300" : "text-emerald-300"
+            }">
+              ${hasError ? `Error` : "OK"}
+            </td>
+          </tr>
+          ${
+            !hasError
+              ? `
+          <tr class="border-b border-white/5 bg-slate-900/40" data-url="${
+            item.url
+          }">
+            <td colspan="6" class="py-2 pl-4">
+              <details class="group cursor-pointer">
+                <summary class="text-xs text-slate-300 outline-none select-none">
+                  Slow assets for <span class="text-white">${item.url}</span>${
+                  item.slowImages && item.slowImages.length
+                    ? ` \u2013 ${item.slowImages.length} items`
+                    : ""
+                }
+                </summary>
+                ${
+                  item.slowImages && item.slowImages.length
+                    ? `
+                <ul class="mt-2 list-disc list-inside space-y-1 text-[11px] sm:text-xs text-slate-200">
+                  ${item.slowImages
+                    .map(
+                      (img) => `<li class="break-all leading-snug">${img}</li>`
+                    )
+                    .join("")}
+                </ul>
+                `
+                    : `<p class="mt-2 text-[11px] text-slate-400">No slow assets detected</p>`
+                }
+              </details>
+            </td>
+          </tr>
+          `
+              : ""
+          }
+        `;
+      };
+
+      // Multi-site submit with streaming
+      multiForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const raw = multiUrlInput.value;
+        const urls = raw
+          .split("\n")
+          .map((u) => u.trim())
+          .filter((u) => u.length > 0)
+          .slice(0, 10);
+
+        if (urls.length === 0) return;
+
+        multiResultsContainer.classList.remove("hidden");
+        multiResultsTable.innerHTML =
+          '<tr><td colspan="6" class="py-2 text-slate-400">Starting checks...</td></tr>';
+
+        try {
+          // Use fetch with streaming
+          const response = await fetch("/submit-multi-url", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ "multi-url": urls.join("\n") }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let receivedCount = 0;
+
+          // Clear initial loading message
+          multiResultsTable.innerHTML = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const jsonStr = line.slice(6); // Remove "data: " prefix
+                  const item = JSON.parse(jsonStr);
+                  receivedCount++;
+
+                  // Append new result row
+                  multiResultsTable.insertAdjacentHTML(
+                    "beforeend",
+                    renderResultRow(item)
+                  );
+
+                  // Update status if all done
+                  if (receivedCount === urls.length) {
+                    // All results received
+                  }
+                } catch (e) {
+                  console.error("Error parsing SSE data:", e);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          multiResultsTable.innerHTML = `<tr><td colspan="6" class="py-2 text-red-400">Error: ${err.message}</td></tr>`;
+          console.error("Multi ping failed:", err);
+        }
+      });
+
+      // Multi clear button
+      multiClearBtn.addEventListener("click", () => {
+        multiUrlInput.value = "";
+        multiResultsContainer.classList.add("hidden");
+        multiResultsTable.innerHTML = "";
       });
     </script>
   </body>

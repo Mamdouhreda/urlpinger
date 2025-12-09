@@ -66,7 +66,9 @@ func SubmitMultiURL(w http.ResponseWriter, r *http.Request) {
 				}
 				return
 			}
-
+			//print in the terminal the url 
+			fmt.Printf("[multi] fetched metrics for %s\n", url)
+			
 			resultChan <- map[string]interface{}{
 				"url":        url,
 				"loadEvent":  navTiming.LoadEvent,

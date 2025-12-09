@@ -5,7 +5,8 @@ metadata:
   labels:
     app: urlpinger
 spec:
-  replicas: 3
+  # Single replica to let one pod take advantage of the full node capacity
+  replicas: 1
   selector:
     matchLabels:
       app: urlpinger
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
         - name: urlpinger
-          image: mamdouhel/urlpinger:v2
+          image: mamdouhel/urlpinger:v5
           imagePullPolicy: Always
           env:
             - name: PORT
@@ -30,8 +31,8 @@ spec:
               cpu: "500m"
               memory: "600Mi"
             limits:
-              cpu: "1"
-              memory: "1200Mi"   # ✅ integer value instead of 1.2Gi
+              cpu: "3"
+              memory: "6Gi"
 ---
 apiVersion: v1
 kind: Service

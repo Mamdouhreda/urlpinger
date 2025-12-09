@@ -18,12 +18,27 @@ type NavTiming struct {
 
 // LoadEventMS navigates to the URL and returns loadEventEnd in milliseconds.
 func LoadEventMS(url string)(NavTiming, error){
-	// Create context with timeout (50 seconds)
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	// Create context with timeout (30 seconds - reduced from 50)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Create new Chrome instance
-	ctx, cancelBrowser := chromedp.NewContext(ctx)
+	// Create Chrome options for faster startup
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.NoFirstRun,
+		chromedp.NoDefaultBrowserCheck,
+		chromedp.DisableGPU,
+		chromedp.NoSandbox,
+		chromedp.Headless,
+		chromedp.Flag("disable-dev-shm-usage", true), // Overcome limited resource problems
+		chromedp.Flag("disable-extensions", true),
+		chromedp.Flag("disable-plugins", true),
+	)
+
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx, opts...)
+	defer cancelAlloc()
+
+	// Create new Chrome instance with optimized settings
+	ctx, cancelBrowser := chromedp.NewContext(allocCtx)
 	defer cancelBrowser()
 
 
@@ -45,8 +60,8 @@ func LoadEventMS(url string)(NavTiming, error){
 		chromedp.Evaluate(`window.performance.timing.responseStart - window.performance.timing.requestStart`, &TTFB),
 		// DNS lookup time
 		chromedp.Evaluate(`window.performance.timing.domainLookupEnd - window.performance.timing.domainLookupStart`, &DNS),
-		// TLS handshake time
-		chromedp.Evaluate(`window.performance.timing.connectEnd - window.performance.timing.secureConnectionStart`, &TLS),		
+		// TLS handshake time - fix: check if secureConnectionStart exists (is > 0)
+		chromedp.Evaluate(`(window.performance.timing.secureConnectionStart > 0) ? (window.performance.timing.connectEnd - window.performance.timing.secureConnectionStart) : 0`, &TLS),		
 
 	)
 	if err != nil {

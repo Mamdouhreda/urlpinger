@@ -8,8 +8,9 @@ import (
 
 // Home handles the root route.
 func Home(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "index.html")
+    renderTemplate(w, "index.html")
 }
+
 
 // renderTemplate parses and executes the named template from the frontend directory.
 func renderTemplate(w http.ResponseWriter, tmpl string) {

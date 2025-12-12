@@ -20,8 +20,8 @@ func SubmitMultiURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// Limit to 2 concurrent workers
-	sem := make(chan struct{}, 3)
+	// Limit to 1 concurrent workers
+	sem := make(chan struct{}, 4)
 
 	// Channel for goroutines to send results
 	resultChan := make(chan map[string]interface{})

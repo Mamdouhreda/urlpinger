@@ -271,72 +271,7 @@
         }
       });
 
-      // Helper function to render a single result row
-      const renderResultRow = (item) => {
-        const hasError = !!item.error;
-        return `
-          <tr class="border-b border-white/10" data-url="${item.url}">
-            <td class="py-2 pr-4 text-white break-all">${item.url}</td>
-            <td class="py-2 pr-4 text-slate-200">
-              ${
-                hasError || item.loadEvent == null
-                  ? "-"
-                  : item.loadEvent.toFixed(2)
-              }
-            </td>
-            <td class="py-2 pr-4 text-slate-200">
-              ${hasError || item.ttfb == null ? "-" : item.ttfb.toFixed(2)}
-            </td>
-            <td class="py-2 pr-4 text-slate-200">
-              ${hasError || item.dns == null ? "-" : item.dns.toFixed(2)}
-            </td>
-            <td class="py-2 pr-4 text-slate-200">
-              ${hasError || item.tls == null ? "-" : item.tls.toFixed(2)}
-            </td>
-            <td class="py-2 pr-4 ${
-              hasError ? "text-amber-300" : "text-emerald-300"
-            }">
-              ${hasError ? `Error` : "OK"}
-            </td>
-          </tr>
-          ${
-            !hasError
-              ? `
-          <tr class="border-b border-white/5 bg-slate-900/40" data-url="${
-            item.url
-          }">
-            <td colspan="6" class="py-2 pl-4">
-              <details class="group cursor-pointer">
-                <summary class="text-xs text-slate-300 outline-none select-none">
-                  Slow assets for <span class="text-white">${item.url}</span>${
-                  item.slowImages && item.slowImages.length
-                    ? ` \u2013 ${item.slowImages.length} items`
-                    : ""
-                }
-                </summary>
-                ${
-                  item.slowImages && item.slowImages.length
-                    ? `
-                <ul class="mt-2 list-disc list-inside space-y-1 text-[11px] sm:text-xs text-slate-200">
-                  ${item.slowImages
-                    .map(
-                      (img) => `<li class="break-all leading-snug">${img}</li>`
-                    )
-                    .join("")}
-                </ul>
-                `
-                    : `<p class="mt-2 text-[11px] text-slate-400">No slow assets detected</p>`
-                }
-              </details>
-            </td>
-          </tr>
-          `
-              : ""
-          }
-        `;
-      };
-
-      // Multi-site submit with streaming
+      // Multi-site submit
       multiForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const raw = multiUrlInput.value;
@@ -350,10 +285,9 @@
 
         multiResultsContainer.classList.remove("hidden");
         multiResultsTable.innerHTML =
-          '<tr><td colspan="6" class="py-2 text-slate-400">Starting checks...</td></tr>';
+          '<tr><td colspan="6" class="py-2 text-slate-400">Loading...</td></tr>';
 
         try {
-          // Use fetch with streaming
           const response = await fetch("/submit-multi-url", {
             method: "POST",
             headers: {
@@ -366,45 +300,78 @@
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-          let receivedCount = 0;
+          const data = await response.json();
 
-          // Clear initial loading message
-          multiResultsTable.innerHTML = "";
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const jsonStr = line.slice(6); // Remove "data: " prefix
-                  const item = JSON.parse(jsonStr);
-                  receivedCount++;
-
-                  // Append new result row
-                  multiResultsTable.insertAdjacentHTML(
-                    "beforeend",
-                    renderResultRow(item)
-                  );
-
-                  // Update status if all done
-                  if (receivedCount === urls.length) {
-                    // All results received
-                  }
-                } catch (e) {
-                  console.error("Error parsing SSE data:", e);
-                }
-              }
-            }
+          if (!Array.isArray(data)) {
+            throw new Error("Unexpected response format");
           }
+
+          multiResultsTable.innerHTML = data
+            .map((item) => {
+              const hasError = !!item.error;
+              return `
+              <tr class="border-b border-white/10">
+                <td class="py-2 pr-4 text-white break-all">${item.url}</td>
+                <td class="py-2 pr-4 text-slate-200">
+                  ${
+                    hasError || item.loadEvent == null
+                      ? "-"
+                      : item.loadEvent.toFixed(2)
+                  }
+                </td>
+                <td class="py-2 pr-4 text-slate-200">
+                  ${hasError || item.ttfb == null ? "-" : item.ttfb.toFixed(2)}
+                </td>
+                <td class="py-2 pr-4 text-slate-200">
+                  ${hasError || item.dns == null ? "-" : item.dns.toFixed(2)}
+                </td>
+                <td class="py-2 pr-4 text-slate-200">
+                  ${hasError || item.tls == null ? "-" : item.tls.toFixed(2)}
+                </td>
+                <td class="py-2 pr-4 ${
+                  hasError ? "text-amber-300" : "text-emerald-300"
+                }">
+                  ${hasError ? `Error` : "OK"}
+                </td>
+              </tr>
+              ${
+                !hasError
+                  ? `
+              <tr class="border-b border-white/5 bg-slate-900/40">
+                <td colspan="6" class="py-2 pl-4">
+                  <details class="group cursor-pointer">
+                    <summary class="text-xs text-slate-300 outline-none select-none">
+                      Slow assets for <span class="text-white">${
+                        item.url
+                      }</span>${
+                      item.slowImages && item.slowImages.length
+                        ? ` \u2013 ${item.slowImages.length} items`
+                        : ""
+                    }
+                    </summary>
+                    ${
+                      item.slowImages && item.slowImages.length
+                        ? `
+                    <ul class="mt-2 list-disc list-inside space-y-1 text-[11px] sm:text-xs text-slate-200">
+                      ${item.slowImages
+                        .map(
+                          (img) =>
+                            `<li class="break-all leading-snug">${img}</li>`
+                        )
+                        .join("")}
+                    </ul>
+                    `
+                        : `<p class="mt-2 text-[11px] text-slate-400">No slow assets detected</p>`
+                    }
+                  </details>
+                </td>
+              </tr>
+              `
+                  : ""
+              }
+            `;
+            })
+            .join("");
         } catch (err) {
           multiResultsTable.innerHTML = `<tr><td colspan="6" class="py-2 text-red-400">Error: ${err.message}</td></tr>`;
           console.error("Multi ping failed:", err);
@@ -418,5 +385,11 @@
         multiResultsTable.innerHTML = "";
       });
     </script>
+
+
+
+<h1>Hello World docker working </h1>
+<p>This is a test</p>
+<p>This is a test</p>
   </body>
 </html>

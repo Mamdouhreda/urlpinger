@@ -3,20 +3,28 @@ name: build-and-deploy
 on:
   push:
     branches: ["main"]
+  # you can keep PRs if you want build-only on PRs later
+  # pull_request:
+  #   branches: ["main"]
 
 env:
-  NAMESPACE: default
-  DEPLOYMENT: urlpinger
-  CONTAINER: urlpinger
-  IMAGE: mamdouhel/urlpinger
+  IMAGE: mamdouhel/urlpinger      # your Docker Hub image
+  NAMESPACE: default              # Kubernetes namespace
+  DEPLOYMENT: urlpinger           # Kubernetes Deployment name
+  CONTAINER: urlpinger            # container name inside the Deployment
 
 jobs:
-  deploy:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"      # or your Go version
 
       - name: Run tests
         run: go test ./...
@@ -27,7 +35,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.MAMDOUHEL }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push image
@@ -39,17 +47,19 @@ jobs:
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
 
-      - name: Setup kubectl
+      - name: Install kubectl
         uses: azure/setup-kubectl@v4
+        with:
+          version: "latest"
 
-      - name: Load kubeconfig
+      - name: Configure kubeconfig
         run: |
-          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > kubeconfig
-          echo "KUBECONFIG=$PWD/kubeconfig" >> $GITHUB_ENV
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
 
-      - name: Rollout new image
+      - name: Deploy to Kubernetes (rolling update)
         run: |
-          kubectl -n $NAMESPACE set image deployment/$DEPLOYMENT \
-            $CONTAINER=${IMAGE}:${{ github.sha }}
-          kubectl -n $NAMESPACE rollout status deployment/$DEPLOYMENT
-          kubectl -n $NAMESPACE get pods -l app=urlpinger -o wide
+          kubectl -n "${{ env.NAMESPACE }}" set image deployment/${{ env.DEPLOYMENT }} \
+            ${{ env.CONTAINER }}=${{ env.IMAGE }}:${{ github.sha }}
+          kubectl -n "${{ env.NAMESPACE }}" rollout status deployment/${{ env.DEPLOYMENT }}
